@@ -2,18 +2,47 @@ package com.onion.backend.controller;
 
 import com.onion.backend.dto.SignUpUser;
 import com.onion.backend.entity.User;
+import com.onion.backend.jwt.JwtUtil;
+import com.onion.backend.service.CustomUserDetailsService;
+import com.onion.backend.service.JwtBlacklistService;
 import com.onion.backend.service.UserService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Parameter;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+    private final AuthenticationManager authenticationManager;
     private final UserService userService;
+    private final JwtUtil jwtUtil;
+    private final CustomUserDetailsService userDetailsService;
+    private final JwtBlacklistService jwtBlacklistService;
 
-    public UserController(UserService userService) {
+
+    @Autowired
+    public UserController(UserService userService, AuthenticationManager authenticationManager, JwtUtil jwtUtil, CustomUserDetailsService userDetailsService, JwtBlacklistService jwtBlacklistService) {
         this.userService = userService;
+        this.authenticationManager = authenticationManager;
+        this.jwtUtil = jwtUtil;
+        this.userDetailsService = userDetailsService;
+        this.jwtBlacklistService = jwtBlacklistService;
     }
 
     @PostMapping("/signUp")
@@ -27,5 +56,70 @@ public class UserController {
             @Parameter(description = "ID of the user to be deleted", required = true) @PathVariable Long userId) {
         userService.deleteUser(userId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/login")
+    public String login(@RequestParam String username, @RequestParam String password, HttpServletResponse response) throws AuthenticationException {
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        String token = jwtUtil.generateToken(userDetails.getUsername());
+
+        Cookie cookie = new Cookie("onion_token", token);
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(60 * 60); // 1시간
+
+        response.addCookie(cookie);
+        return token;
+    }
+
+    /**
+     * 현재 웹브라우저 로그아웃 처리
+     */
+    @PostMapping("/logout")
+    public void logout(HttpServletResponse response) {
+        Cookie cookie = new Cookie("onion_token", null);
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(0); // 쿠키 삭제
+        response.addCookie(cookie);
+    }
+
+    /**
+     * 모든 기기에 대해서 로그아웃 처리
+     */
+    @PostMapping("/logout/all")
+    public void logout(
+            @RequestParam(required = false) String requestToken,
+            @CookieValue(value = "onion_token", required = false) String cookieToken,
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
+        String token = null;
+        String bearerToken = request.getHeader("Authorization");
+        if (requestToken != null) {
+            token = requestToken;
+        } else if (cookieToken != null) {
+            token = cookieToken;
+        } else if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            token = bearerToken.substring(7);
+        }
+        Instant instant = new Date().toInstant();
+        LocalDateTime expirationTime = instant.atZone(ZoneId.systemDefault()).toLocalDateTime();
+        String username = jwtUtil.getUsernameFromToken(token);
+        jwtBlacklistService.blacklistToken(token, expirationTime, username);
+        Cookie cookie = new Cookie("onion_token", null);
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(0); // 쿠키 삭제
+        response.addCookie(cookie);
+    }
+
+    @PostMapping("/token/validation")
+    @ResponseStatus(HttpStatus.OK)
+    public void jwtValidate(@RequestParam String token) {
+        if (!jwtUtil.validateToken(token)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Token is not validation");
+        }
     }
 }
