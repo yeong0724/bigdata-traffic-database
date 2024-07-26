@@ -59,7 +59,11 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public String login(@RequestParam String username, @RequestParam String password, HttpServletResponse response) throws AuthenticationException {
+    public String login(
+            @Parameter(description = "로그인 ID", example = "kid4211", required = true) @RequestParam String username,
+            @Parameter(description = "로그인 Password", example = "12345678", required = true) @RequestParam String password,
+            HttpServletResponse response
+    ) throws AuthenticationException {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         String token = jwtUtil.generateToken(userDetails.getUsername());

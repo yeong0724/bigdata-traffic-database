@@ -8,9 +8,6 @@ import lombok.Data;
 @Data
 @Schema(description = "Article Schema")
 public class WriteArticleDto {
-    @Schema(description = "Board 테이블 key 값", example = "1")
-    Long boardId;
-
     @Schema(description = "게시글 제목", example = "My First Article")
     @NotNull(message = "Title is mandatory")
     @NotBlank(message = "Title cannot be blank")
