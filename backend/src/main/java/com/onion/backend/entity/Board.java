@@ -1,6 +1,5 @@
 package com.onion.backend.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,23 +13,17 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-public class User {
+public class Board {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
-    private String username;
+    private String title;
 
-    @JsonIgnore
     @Column(nullable = false)
-    private String password;
-
-    @JsonIgnore // API 통신에서 패스워드 값을 제외 하는 옵션
-    @Column(nullable = false)
-    private String email;
-
-    private LocalDateTime lastLogin;
+    private String description;
 
     @CreatedDate
     @Column(insertable = true)
