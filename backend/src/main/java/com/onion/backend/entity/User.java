@@ -22,7 +22,7 @@ public class User {
     @Column(nullable = false)
     private String username;
 
-    @JsonIgnore
+    @JsonIgnore // API 통신에서 패스워드 값을 제외 하는 옵션
     @Column(nullable = false)
     private String password;
 
