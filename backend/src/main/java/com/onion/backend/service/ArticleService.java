@@ -148,11 +148,21 @@ public class ArticleService {
 
     private boolean isCanWriteArticle() {
         Article latestArticle = articleRepository.findLatestArticleByAuthorUsernameOrderByCreatedDate(CommonUtil.getLoginUsername());
+
+        if (latestArticle == null) {
+            return true;
+        }
+
         return this.isDifferenceMoreThanFiveMinutes(latestArticle.getCreatedDate());
     }
 
     private boolean isCanEditArticle() {
         Article latestArticle = articleRepository.findLatestArticleByAuthorUsernameOrderByUpdatedDate(CommonUtil.getLoginUsername());
+
+        if (latestArticle == null || latestArticle.getUpdatedDate() == null) {
+            return true;
+        }
+
         return this.isDifferenceMoreThanFiveMinutes(latestArticle.getUpdatedDate());
     }
 
