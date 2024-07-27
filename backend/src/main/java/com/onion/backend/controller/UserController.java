@@ -6,6 +6,9 @@ import com.onion.backend.jwt.JwtUtil;
 import com.onion.backend.service.CustomUserDetailsService;
 import com.onion.backend.service.JwtBlacklistService;
 import com.onion.backend.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,11 +17,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
@@ -28,6 +29,7 @@ import java.util.Date;
 
 @RestController
 @RequestMapping("/api/users")
+@Tag(name = "UserController", description = "회원 API")
 public class UserController {
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
@@ -45,12 +47,14 @@ public class UserController {
         this.jwtBlacklistService = jwtBlacklistService;
     }
 
+    @Operation(summary = "회원 가입")
     @PostMapping("/signUp")
     public ResponseEntity<User> createUser(@RequestBody SignUpUser signUpUser) {
         User user = userService.createUser(signUpUser);
         return ResponseEntity.ok(user);
     }
 
+    @Operation(summary = "회원 탈퇴")
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> deleteUser(
             @Parameter(description = "ID of the user to be deleted", required = true) @PathVariable Long userId) {
@@ -58,6 +62,7 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "로그인")
     @PostMapping("/login")
     public String login(
             @Parameter(description = "로그인 ID", example = "kid4211", required = true) @RequestParam String username,
@@ -80,6 +85,7 @@ public class UserController {
     /**
      * 현재 웹브라우저 로그아웃 처리
      */
+    @Operation(summary = "웹브라우저 로그아웃")
     @PostMapping("/logout")
     public void logout(HttpServletResponse response) {
         Cookie cookie = new Cookie("onion_token", null);
@@ -92,6 +98,7 @@ public class UserController {
     /**
      * 모든 기기에 대해서 로그아웃 처리
      */
+    @Operation(summary = "모든 기기 로그아웃")
     @PostMapping("/logout/all")
     public void logout(
             @RequestParam(required = false) String requestToken,
@@ -119,6 +126,7 @@ public class UserController {
         response.addCookie(cookie);
     }
 
+    @Operation(summary = "JWT 검증")
     @PostMapping("/token/validation")
     @ResponseStatus(HttpStatus.OK)
     public void jwtValidate(@RequestParam String token) {

@@ -60,22 +60,34 @@ public class CommentService {
     @CheckCommentEditable
     @SuppressWarnings("unused")
     public Comment editComment(Long boardId, Long articleId, Long commentId, WriteCommentDto writeCommentDto) {
-        Comment comment = commentRepository.findById(commentId).orElse(null);
-        if (comment == null || comment.getIsDeleted()) {
-            throw new ResourceNotFoundException("comment not found");
-        }
+        // User user = CommentContext.getCurrentUser();
+        //
+        // if (!Objects.equals(comment.getAuthor().getUsername(), user.getUsername())) {
+        //     throw new ForbiddenException("comment author different");
+        // }
 
-        User user = CommentContext.getCurrentUser();
-        if (!Objects.equals(comment.getAuthor().getUsername(), user.getUsername())) {
-            throw new ForbiddenException("comment author different");
-        }
-
+        Comment comment = CommentContext.getCurrentComment();
         if (writeCommentDto.getContent() != null) {
             comment.setContent(writeCommentDto.getContent());
         }
 
         commentRepository.save(comment);
         return comment;
+    }
+
+    @Transactional
+    @CheckCommentEditable
+    @SuppressWarnings("unused")
+    public void deleteComment(Long boardId, Long articleId, Long commentId) {
+        // User user = CommentContext.getCurrentUser();
+        //
+        // if (!Objects.equals(comment.getAuthor().getUsername(), user.getUsername())) {
+        //     throw new ForbiddenException("comment author different");
+        // }
+
+        Comment comment = CommentContext.getCurrentComment();
+        comment.setIsDeleted(true);
+        commentRepository.save(comment);
     }
 
     @Async

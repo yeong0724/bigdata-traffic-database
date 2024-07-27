@@ -1,6 +1,7 @@
 package com.onion.backend.common;
 
 import com.onion.backend.entity.Article;
+import com.onion.backend.entity.Comment;
 import com.onion.backend.entity.User;
 import org.springframework.stereotype.Component;
 
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Component;
 public class CommentContext {
     private static final ThreadLocal<User> currentUser = new ThreadLocal<>();
     private static final ThreadLocal<Article> currentArticle = new ThreadLocal<>();
+    private static final ThreadLocal<Comment> currentComment = new ThreadLocal<>();
 
     public static void setCurrentUser(User user) {
         currentUser.set(user);
@@ -33,8 +35,21 @@ public class CommentContext {
         currentArticle.remove();
     }
 
+    public static void setCurrentComment(Comment comment) {
+        currentComment.set(comment);
+    }
+
+    public static Comment getCurrentComment() {
+        return currentComment.get();
+    }
+
+    public static void clearCurrentComment() {
+        currentComment.remove();
+    }
+
     public static void clear() {
         clearCurrentUser();
         clearCurrentArticle();
+        clearCurrentComment();
     }
 }

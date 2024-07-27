@@ -22,6 +22,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.Objects;
 
 @Aspect
 @Component
@@ -61,13 +62,14 @@ public class CommentAspect {
         }
     }
 
-    @Around("@annotation(com.onion.backend.aop.annotation.CheckCommentEditable) && args(boardId, articleId, ..)")
-    public Object checkEditComment(ProceedingJoinPoint joinPoint, Long boardId, Long articleId) throws Throwable {
+    @Around("@annotation(com.onion.backend.aop.annotation.CheckCommentEditable) && args(boardId, articleId, commentId, ..)")
+    public Object checkEditComment(ProceedingJoinPoint joinPoint, Long boardId, Long articleId, Long commentId) throws Throwable {
         if (!isCanEditComment()) {
             throw new RateLimitException("comment not edited by rate limit");
         }
 
         checkCommonConditions(boardId, articleId);
+        checkComment(commentId);
 
         try {
             return joinPoint.proceed();
@@ -99,6 +101,21 @@ public class CommentAspect {
 
         CommentContext.setCurrentUser(user);
         CommentContext.setCurrentArticle(article);
+    }
+
+    private void checkComment(Long commentId) {
+        User user = CommentContext.getCurrentUser();
+        Comment comment = commentRepository.findById(commentId).orElse(null);
+
+        if (comment == null || comment.getIsDeleted()) {
+            throw new ResourceNotFoundException("comment not found");
+        }
+
+        if (!Objects.equals(comment.getAuthor().getUsername(), user.getUsername())) {
+            throw new ForbiddenException("comment author different");
+        }
+
+        CommentContext.setCurrentComment(comment);
     }
 
     private boolean isCanWriteComment() {

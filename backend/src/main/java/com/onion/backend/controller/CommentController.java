@@ -37,9 +37,20 @@ public class CommentController {
     public ResponseEntity<Comment> writeComment(
             @Parameter(description = "Board 테이블 Key 값", example = "1", required = true) @PathVariable Long boardId,
             @Parameter(description = "Article 테이블 Key 값", example = "1", required = true) @PathVariable Long articleId,
-            @Parameter(description = "Comment 테이블 Key 값", example = "1", required = true)@PathVariable Long commentId,
+            @Parameter(description = "Comment 테이블 Key 값", example = "1", required = true) @PathVariable Long commentId,
             @RequestBody WriteCommentDto editCommentDto
     ) {
         return ResponseEntity.ok(commentService.editComment(boardId, articleId, commentId, editCommentDto));
+    }
+
+    @Operation(summary = "댓글 삭제")
+    @DeleteMapping("/{boardId}/articles/{articleId}/comments/{commentId}")
+    public ResponseEntity<String> writeComment(
+            @Parameter(description = "Board 테이블 Key 값", example = "1", required = true) @PathVariable Long boardId,
+            @Parameter(description = "Article 테이블 Key 값", example = "1", required = true) @PathVariable Long articleId,
+            @Parameter(description = "Comment 테이블 Key 값", example = "1", required = true) @PathVariable Long commentId
+    ) {
+        commentService.deleteComment(boardId, articleId, commentId);
+        return ResponseEntity.ok("comment is deleted");
     }
 }
