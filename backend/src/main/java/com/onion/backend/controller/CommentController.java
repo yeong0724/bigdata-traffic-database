@@ -1,7 +1,7 @@
 package com.onion.backend.controller;
 
 import com.onion.backend.dto.WriteCommentDto;
-import com.onion.backend.entity.Comment;
+import com.onion.backend.entity.comment.Comment;
 import com.onion.backend.service.CommentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

@@ -11,4 +11,7 @@ public class WriteCommentDto {
     @NotNull(message = "comment's content is mandatory")
     @NotBlank(message = "comment's content cannot be blank")
     String content;
+
+    @Schema(description = "대댓글 부모 댓글 ID", example = "1")
+    Long commentsId = null;
 }

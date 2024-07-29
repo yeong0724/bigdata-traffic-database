@@ -1,8 +1,8 @@
 package com.onion.backend.common;
 
-import com.onion.backend.entity.Article;
-import com.onion.backend.entity.Comment;
-import com.onion.backend.entity.User;
+import com.onion.backend.entity.article.Article;
+import com.onion.backend.entity.comment.Comment;
+import com.onion.backend.entity.user.User;
 import org.springframework.stereotype.Component;
 
 @Component

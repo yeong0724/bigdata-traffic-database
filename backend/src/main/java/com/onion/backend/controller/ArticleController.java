@@ -2,7 +2,8 @@ package com.onion.backend.controller;
 
 import com.onion.backend.dto.EditArticleDto;
 import com.onion.backend.dto.WriteArticleDto;
-import com.onion.backend.entity.Article;
+import com.onion.backend.entity.article.Article;
+import com.onion.backend.entity.article.ArticleSearch;
 import com.onion.backend.service.ArticleService;
 import com.onion.backend.service.CommentService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,7 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/boards")
@@ -59,12 +59,12 @@ public class ArticleController {
 
     @GetMapping("/{boardId}/articles/{articleId}")
     @Operation(summary = "게시글 조회(+ 댓글)")
-    public ResponseEntity<Article> getArticleWithComment(
+    public ResponseEntity<ArticleSearch> getArticleWithComment(
             @Parameter(description = "Board 테이블 Key 값", example = "1", required = true) @PathVariable Long boardId,
             @Parameter(description = "Article 테이블 Key 값", example = "1", required = true) @PathVariable Long articleId
     ) {
-        CompletableFuture<Article> article = commentService.getArticleWithComment(boardId, articleId);
-        return ResponseEntity.ok(article.resultNow());
+        ArticleSearch article = articleService.getArticleWithComment(boardId, articleId);
+        return ResponseEntity.ok(article);
     }
 
     @Operation(summary = "게시글 수정")

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.onion.backend.mapper.CommentMapper">
+    <select id="findById" resultType="com.onion.backend.entity.comment.Comment">
+        SELECT * FROM comment WHERE id = #{commentId} AND is_deleted = false
+    </select>
+
+    <select id="findLatestCommentOrderByCreatedDate" resultType="com.onion.backend.entity.comment.Comment">
+        SELECT c.* FROM comment c JOIN user u ON c.user_id = u.id
+        WHERE u.username = #{username}
+        ORDER BY c.created_date DESC LIMIT 1
+    </select>
+
+    <select id="findLatestCommentOrderByUpdatedDate" resultType="com.onion.backend.entity.comment.Comment">
+        SELECT c.* FROM comment c JOIN user u ON c.user_id = u.id
+        WHERE u.username = #{username}
+        ORDER BY c.updated_date DESC LIMIT 1
+    </select>
+
+    <insert id="createComment" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO comment(content, user_id, article_id, is_deleted, comments_id, created_date, updated_date)
+        VALUES(#{content}, #{userId}, #{articleId}, #{isDeleted}, #{commentsId}, #{createdDate}, #{updatedDate})
+    </insert>
+
+    <update id="updateComment">
+        UPDATE comment
+        SET content = #{content}, updated_date = #{updatedDate}
+        WHERE id = #{id}
+    </update>
+
+    <update id="deleteComment">
+        UPDATE comment SET is_deleted = #{isDeleted} WHERE id = #{id}
+    </update>
+</mapper>

@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.onion.backend.mapper.ArticleMapper">
+    <select id="findById" resultType="com.onion.backend.entity.article.Article">
+        SELECT *
+        FROM article
+        WHERE id = #{articleId}
+          AND is_deleted = false
+    </select>
+
+    <select id="findTop10ByBoardIdOrderByCreatedDateDesc" resultType="com.onion.backend.entity.article.Article">
+        SELECT id,
+               title,
+               content,
+               user_id,
+               board_id,
+               is_deleted,
+               created_date,
+               updated_date
+        FROM article
+        WHERE board_id = #{boardId}
+          AND is_deleted = false
+        ORDER BY created_date DESC
+        LIMIT 10
+    </select>
+
+    <select id="findTop10ByBoardIdAndArticleIdLessThanOrderByCreatedDateDesc"
+            resultType="com.onion.backend.entity.article.Article">
+        <![CDATA[
+        SELECT *
+        FROM article
+        WHERE board_id = #{boardId}
+          AND id < #{articleId}
+          AND is_deleted = false
+        ORDER BY created_date DESC
+        LIMIT 10
+        ]]>
+    </select>
+
+    <select id="findTop10ByBoardIdAndArticleIdGreaterThanOrderByCreatedDateDesc"
+            resultType="com.onion.backend.entity.article.Article">
+        SELECT id,
+               title,
+               content,
+               user_id,
+               board_id,
+               is_deleted,
+               created_date,
+               updated_date
+        FROM article
+        WHERE board_id = #{boardId}
+          AND is_deleted = false
+          AND id > #{articleId}
+        ORDER BY created_date DESC
+        LIMIT 10
+    </select>
+
+    <select id="findLatestArticleByAuthorUsernameOrderByCreatedDate"
+            resultType="com.onion.backend.entity.article.Article">
+        SELECT a.*
+        FROM article a
+                 JOIN user u ON a.user_id = u.id
+        WHERE u.username = #{username}
+        ORDER BY a.created_date DESC
+        LIMIT 1
+    </select>
+
+    <select id="findLatestArticleByAuthorUsernameOrderByUpdatedDate"
+            resultType="com.onion.backend.entity.article.Article">
+        SELECT a.*
+        FROM article a
+                 JOIN user u ON a.user_id = u.id
+        WHERE u.username = #{username}
+        ORDER BY a.updated_date DESC
+        LIMIT 1
+    </select>
+
+    <resultMap id="ArticleResultMap" type="com.onion.backend.entity.article.ArticleSearch">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="isDeleted" column="is_deleted"/>
+        <result property="createdDate" column="created_date"/>
+        <result property="updatedDate" column="updated_date"/>
+        <association property="user" column="user_id" javaType="com.onion.backend.entity.user.UserSearch">
+            <result property="username" column="username"/>
+            <result property="lastLogin" column="last_login"/>
+            <result property="createdDate" column="user_created_date"/>
+            <result property="updatedDate" column="user_updated_date"/>
+        </association>
+        <association property="board" column="board_id" javaType="com.onion.backend.entity.board.BoardSearch">
+            <result property="title" column="board_title"/>
+            <result property="description" column="description"/>
+            <result property="createdDate" column="board_created_date"/>
+            <result property="updatedDate" column="board_updated_date"/>
+        </association>
+        <collection property="comments" column="id" ofType="com.onion.backend.entity.comment.CommentSearch" select="findCommentsByArticleId" />
+    </resultMap>
+
+    <select id="findArticleByIdWithComments" resultMap="ArticleResultMap">
+        <![CDATA[
+        SELECT a.id           AS id,
+               a.title        AS title,
+               a.content      AS content,
+               a.is_deleted   AS is_deleted,
+               a.created_date AS created_date,
+               a.updated_date AS updated_date,
+               u.username     AS username,
+               u.last_login   AS last_login,
+               u.created_date AS user_created_date,
+               u.updated_date AS user_updated_date,
+               b.title        AS board_title,
+               b.description  AS description,
+               b.created_date AS board_created_date,
+               b.updated_date AS board_updated_date
+        FROM article a
+                 JOIN user u ON a.user_id = u.id
+                 JOIN board b ON a.board_id = b.id
+        WHERE a.board_id = #{boardId}
+          AND a.id = #{articleId}
+          AND a.is_deleted = false
+        ]]>
+    </select>
+
+    <resultMap id="CommentResultMap" type="com.onion.backend.entity.comment.CommentSearch" >
+        <id property="id" column="id"/>
+        <result property="content" column="content"/>
+        <result property="commentsId" column="comments_id"/>
+        <result property="createdDate" column="created_date"/>
+        <result property="updatedDate" column="updated_date"/>
+        <association property="user" column="user_id" javaType="com.onion.backend.entity.user.UserSearch">
+            <result property="username" column="username"/>
+            <result property="lastLogin" column="last_login"/>
+            <result property="createdDate" column="user_created_date"/>
+            <result property="updatedDate" column="user_updated_date"/>
+        </association>
+        <collection property="comments" column="id" ofType="com.onion.backend.entity.comment.CommentSearch" select="findCommentsByCommentId" />
+    </resultMap>
+
+    <resultMap id="ChildCommentResultMap" type="com.onion.backend.entity.comment.ChildComment" >
+        <id property="id" column="id"/>
+        <result property="content" column="content"/>
+        <result property="createdDate" column="created_date"/>
+        <result property="updatedDate" column="updated_date"/>
+        <association property="user" column="user_id" javaType="com.onion.backend.entity.user.UserSearch">
+            <result property="username" column="username"/>
+            <result property="lastLogin" column="last_login"/>
+            <result property="createdDate" column="user_created_date"/>
+            <result property="updatedDate" column="user_updated_date"/>
+        </association>
+    </resultMap>
+
+    <select id="findCommentsByArticleId" resultMap="CommentResultMap">
+        SELECT c.id           AS id,
+               c.content      AS content,
+               c.comments_id  AS commentsId,
+               c.created_date AS created_date,
+               c.updated_date AS updated_date,
+               u.username     AS username,
+               u.last_login   AS last_login,
+               u.created_date AS user_created_date,
+               u.updated_date AS user_updated_date
+        FROM comment c JOIN user u ON c.user_id = u.id
+        WHERE article_id = #{id}
+          AND is_deleted = false
+          AND comments_id IS NULL
+    </select>
+
+    <select id="findCommentsByCommentId" resultMap="ChildCommentResultMap">
+        SELECT c.id           AS id,
+               c.content      AS content,
+               c.comments_id  AS commentId,
+               c.created_date AS created_date,
+               c.updated_date AS updated_date,
+               u.username     AS username,
+               u.last_login   AS last_login,
+               u.created_date AS user_created_date,
+               u.updated_date AS user_updated_date
+        FROM comment c JOIN user u ON u.id = c.user_id
+        WHERE comments_id = #{id}
+          AND is_deleted = false
+    </select>
+
+    <insert id="createArticle" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO article (content, created_date, title, updated_date, user_id, board_id, is_deleted)
+        VALUES (#{content}, #{createdDate}, #{title}, #{updatedDate}, #{userId}, #{boardId}, #{isDeleted})
+    </insert>
+
+    <update id="updateArticle">
+        UPDATE article
+        SET content      = #{content},
+            title        = #{title},
+            updated_date = #{updatedDate}
+        WHERE id = #{id}
+    </update>
+
+    <update id="deleteArticle">
+        UPDATE article
+        SET is_deleted = #{isDeleted}
+        WHERE id = #{id}
+    </update>
+</mapper>

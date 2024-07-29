@@ -2,17 +2,17 @@ package com.onion.backend.aop;
 
 import com.onion.backend.common.CommentContext;
 import com.onion.backend.common.CommonUtil;
-import com.onion.backend.entity.Article;
-import com.onion.backend.entity.Board;
-import com.onion.backend.entity.Comment;
-import com.onion.backend.entity.User;
+import com.onion.backend.entity.article.Article;
+import com.onion.backend.entity.board.Board;
+import com.onion.backend.entity.comment.Comment;
+import com.onion.backend.entity.user.User;
 import com.onion.backend.exception.ForbiddenException;
 import com.onion.backend.exception.RateLimitException;
 import com.onion.backend.exception.ResourceNotFoundException;
-import com.onion.backend.repository.ArticleRepository;
-import com.onion.backend.repository.BoardRepository;
-import com.onion.backend.repository.CommentRepository;
-import com.onion.backend.repository.UserRepository;
+import com.onion.backend.mapper.ArticleMapper;
+import com.onion.backend.mapper.BoardMapper;
+import com.onion.backend.mapper.CommentMapper;
+import com.onion.backend.mapper.UserMapper;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -22,29 +22,28 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
-import java.util.Objects;
 
 @Aspect
 @Component
 public class CommentAspect {
-    private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
-    private final BoardRepository boardRepository;
+    private final ArticleMapper articleMapper;
 
-    private final ArticleRepository articleRepository;
+    private final CommentMapper commentMapper;
 
-    private final CommentRepository commentRepository;
+    private final BoardMapper boardMapper;
 
     public CommentAspect(
-            UserRepository userRepository,
-            BoardRepository boardRepository,
-            ArticleRepository articleRepository,
-            CommentRepository commentRepository
+            UserMapper userMapper,
+            BoardMapper boardMapper,
+            ArticleMapper articleMapper,
+            CommentMapper commentMapper
     ) {
-        this.userRepository = userRepository;
-        this.boardRepository = boardRepository;
-        this.articleRepository = articleRepository;
-        this.commentRepository = commentRepository;
+        this.userMapper = userMapper;
+        this.boardMapper = boardMapper;
+        this.articleMapper = articleMapper;
+        this.commentMapper = commentMapper;
     }
 
     @Around("@annotation(com.onion.backend.aop.annotation.CheckCommentWriteable) && args(boardId, articleId, ..)")
@@ -79,9 +78,9 @@ public class CommentAspect {
     }
 
     private void checkCommonConditions(Long boardId, Long articleId) {
-        User user = userRepository.findByUsername(CommonUtil.getLoginUsername()).orElse(null);
-        Board board = boardRepository.findById(boardId).orElse(null);
-        Article article = articleRepository.findById(articleId).orElse(null);
+        User user = userMapper.findByUsername(CommonUtil.getLoginUsername());
+        Board board = boardMapper.findById(boardId);
+        Article article = articleMapper.findById(articleId);
 
         if (user == null) {
             throw new ResourceNotFoundException("author not found");
@@ -105,13 +104,17 @@ public class CommentAspect {
 
     private void checkComment(Long commentId) {
         User user = CommentContext.getCurrentUser();
-        Comment comment = commentRepository.findById(commentId).orElse(null);
+        Comment comment = commentMapper.findById(commentId);
 
         if (comment == null || comment.getIsDeleted()) {
             throw new ResourceNotFoundException("comment not found");
         }
 
-        if (!Objects.equals(comment.getAuthor().getUsername(), user.getUsername())) {
+        User author = userMapper.findById(comment.getUserId());;
+        String authorName = author.getUsername();
+        String username = user.getUsername();
+
+        if (!authorName.equals(username)) {
             throw new ForbiddenException("comment author different");
         }
 
@@ -119,7 +122,7 @@ public class CommentAspect {
     }
 
     private boolean isCanWriteComment() {
-        Comment latestComment = commentRepository.findLatestCommentOrderByCreatedDate(CommonUtil.getLoginUsername());
+        Comment latestComment = commentMapper.findLatestCommentOrderByCreatedDate(CommonUtil.getLoginUsername());
         if (latestComment == null) {
             return true;
         }
@@ -128,7 +131,7 @@ public class CommentAspect {
     }
 
     private boolean isCanEditComment() {
-        Comment latestComment = commentRepository.findLatestCommentOrderByCreatedDate(CommonUtil.getLoginUsername());
+        Comment latestComment = commentMapper.findLatestCommentOrderByUpdatedDate(CommonUtil.getLoginUsername());
         if (latestComment == null || latestComment.getUpdatedDate() == null) {
             return true;
         }

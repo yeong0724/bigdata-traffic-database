@@ -1,6 +1,8 @@
-package com.onion.backend.entity;
+package com.onion.backend.entity.user;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -9,36 +11,28 @@ import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
-public class Board {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class User {
     private Long id;
 
-    @Column(nullable = false)
-    private String title;
+    private String username;
 
-    @Column(nullable = false)
-    private String description;
+    private String password;
 
-    @CreatedDate
-    @Column(insertable = true)
+    private String email;
+
+    private LocalDateTime lastLogin;
+
     private LocalDateTime createdDate;
 
-    @LastModifiedDate
     private LocalDateTime updatedDate;
 
-    @PrePersist
-    protected void onCreate() {
+    public void onCreate() {
         this.createdDate = LocalDateTime.now();
     }
 
-    @PreUpdate
-    protected void onUpdate() {
+    public void onUpdate() {
         this.updatedDate = LocalDateTime.now();
     }
 }
