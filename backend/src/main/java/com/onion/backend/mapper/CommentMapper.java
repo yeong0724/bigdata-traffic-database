@@ -1,10 +1,8 @@
 package com.onion.backend.mapper;
 
-import com.onion.backend.entity.comment.Comment;
+import com.onion.backend.dto.comment.Comment;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-
-import java.util.List;
 
 @Mapper
 public interface CommentMapper {

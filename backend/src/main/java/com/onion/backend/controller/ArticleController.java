@@ -1,9 +1,9 @@
 package com.onion.backend.controller;
 
-import com.onion.backend.dto.EditArticleDto;
-import com.onion.backend.dto.WriteArticleDto;
-import com.onion.backend.entity.article.Article;
-import com.onion.backend.entity.article.ArticleSearch;
+import com.onion.backend.dto.article.EditArticleDto;
+import com.onion.backend.dto.article.WriteArticleDto;
+import com.onion.backend.dto.article.Article;
+import com.onion.backend.dto.article.ArticleSearch;
 import com.onion.backend.service.ArticleService;
 import com.onion.backend.service.CommentService;
 import io.swagger.v3.oas.annotations.Operation;

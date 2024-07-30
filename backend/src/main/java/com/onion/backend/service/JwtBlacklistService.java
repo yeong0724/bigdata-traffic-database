@@ -1,7 +1,7 @@
 package com.onion.backend.service;
 
-import com.onion.backend.entity.jwt.JwtBlacklist;
-import com.onion.backend.jwt.JwtUtil;
+import com.onion.backend.dto.jwt.JwtBlacklist;
+import com.onion.backend.common.security.JwtUtil;
 import com.onion.backend.mapper.JwtBlacklistMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

@@ -1,13 +1,13 @@
 package com.onion.backend.service;
 
-import com.onion.backend.aop.annotation.CheckCommentEditable;
-import com.onion.backend.aop.annotation.CheckCommentWriteable;
-import com.onion.backend.common.CommentContext;
-import com.onion.backend.dto.WriteCommentDto;
-import com.onion.backend.entity.article.Article;
-import com.onion.backend.entity.comment.Comment;
-import com.onion.backend.entity.user.User;
-import com.onion.backend.exception.DatabaseException;
+import com.onion.backend.common.aop.annotation.CheckCommentEditable;
+import com.onion.backend.common.aop.annotation.CheckCommentWriteable;
+import com.onion.backend.common.utils.CommentContext;
+import com.onion.backend.dto.comment.WriteCommentDto;
+import com.onion.backend.dto.article.Article;
+import com.onion.backend.dto.comment.Comment;
+import com.onion.backend.dto.user.User;
+import com.onion.backend.common.exception.DatabaseException;
 import com.onion.backend.mapper.CommentMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;

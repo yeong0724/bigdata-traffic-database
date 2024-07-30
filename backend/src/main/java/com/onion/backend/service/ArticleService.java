@@ -1,16 +1,16 @@
 package com.onion.backend.service;
 
-import com.onion.backend.common.CommonUtil;
-import com.onion.backend.dto.EditArticleDto;
-import com.onion.backend.dto.WriteArticleDto;
-import com.onion.backend.entity.article.Article;
-import com.onion.backend.entity.article.ArticleSearch;
-import com.onion.backend.entity.board.Board;
-import com.onion.backend.entity.user.User;
-import com.onion.backend.exception.DatabaseException;
-import com.onion.backend.exception.ForbiddenException;
-import com.onion.backend.exception.RateLimitException;
-import com.onion.backend.exception.ResourceNotFoundException;
+import com.onion.backend.common.utils.CommonUtil;
+import com.onion.backend.dto.article.EditArticleDto;
+import com.onion.backend.dto.article.WriteArticleDto;
+import com.onion.backend.dto.article.Article;
+import com.onion.backend.dto.article.ArticleSearch;
+import com.onion.backend.dto.board.Board;
+import com.onion.backend.dto.user.User;
+import com.onion.backend.common.exception.DatabaseException;
+import com.onion.backend.common.exception.ForbiddenException;
+import com.onion.backend.common.exception.RateLimitException;
+import com.onion.backend.common.exception.ResourceNotFoundException;
 import com.onion.backend.mapper.ArticleMapper;
 import com.onion.backend.mapper.BoardMapper;
 import com.onion.backend.mapper.UserMapper;

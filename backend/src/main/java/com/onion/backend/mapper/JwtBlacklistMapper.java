@@ -1,6 +1,6 @@
 package com.onion.backend.mapper;
 
-import com.onion.backend.entity.jwt.JwtBlacklist;
+import com.onion.backend.dto.jwt.JwtBlacklist;
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.data.repository.query.Param;
 

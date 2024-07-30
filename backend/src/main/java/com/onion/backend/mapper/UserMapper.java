@@ -1,6 +1,6 @@
 package com.onion.backend.mapper;
 
-import com.onion.backend.entity.user.User;
+import com.onion.backend.dto.user.User;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 

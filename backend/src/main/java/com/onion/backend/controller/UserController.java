@@ -1,8 +1,8 @@
 package com.onion.backend.controller;
 
-import com.onion.backend.dto.SignUpUser;
-import com.onion.backend.entity.user.User;
-import com.onion.backend.jwt.JwtUtil;
+import com.onion.backend.dto.user.SignUpUser;
+import com.onion.backend.dto.user.User;
+import com.onion.backend.common.security.JwtUtil;
 import com.onion.backend.service.CustomUserDetailsService;
 import com.onion.backend.service.JwtBlacklistService;
 import com.onion.backend.service.UserService;

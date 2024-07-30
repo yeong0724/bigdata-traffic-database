@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.onion.backend.mapper.ArticleMapper">
-    <select id="findById" resultType="com.onion.backend.entity.article.Article">
+    <select id="findById" resultType="com.onion.backend.dto.article.Article">
         SELECT *
         FROM article
         WHERE id = #{articleId}
           AND is_deleted = false
     </select>
 
-    <select id="findTop10ByBoardIdOrderByCreatedDateDesc" resultType="com.onion.backend.entity.article.Article">
+    <select id="findTop10ByBoardIdOrderByCreatedDateDesc" resultType="com.onion.backend.dto.article.Article">
         SELECT id,
                title,
                content,
@@ -25,7 +25,7 @@
     </select>
 
     <select id="findTop10ByBoardIdAndArticleIdLessThanOrderByCreatedDateDesc"
-            resultType="com.onion.backend.entity.article.Article">
+            resultType="com.onion.backend.dto.article.Article">
         <![CDATA[
         SELECT *
         FROM article
@@ -38,7 +38,7 @@
     </select>
 
     <select id="findTop10ByBoardIdAndArticleIdGreaterThanOrderByCreatedDateDesc"
-            resultType="com.onion.backend.entity.article.Article">
+            resultType="com.onion.backend.dto.article.Article">
         SELECT id,
                title,
                content,
@@ -56,7 +56,7 @@
     </select>
 
     <select id="findLatestArticleByAuthorUsernameOrderByCreatedDate"
-            resultType="com.onion.backend.entity.article.Article">
+            resultType="com.onion.backend.dto.article.Article">
         SELECT a.*
         FROM article a
                  JOIN user u ON a.user_id = u.id
@@ -66,7 +66,7 @@
     </select>
 
     <select id="findLatestArticleByAuthorUsernameOrderByUpdatedDate"
-            resultType="com.onion.backend.entity.article.Article">
+            resultType="com.onion.backend.dto.article.Article">
         SELECT a.*
         FROM article a
                  JOIN user u ON a.user_id = u.id
@@ -75,26 +75,26 @@
         LIMIT 1
     </select>
 
-    <resultMap id="ArticleResultMap" type="com.onion.backend.entity.article.ArticleSearch">
+    <resultMap id="ArticleResultMap" type="com.onion.backend.dto.article.ArticleSearch">
         <id property="id" column="id"/>
         <result property="title" column="title"/>
         <result property="content" column="content"/>
         <result property="isDeleted" column="is_deleted"/>
         <result property="createdDate" column="created_date"/>
         <result property="updatedDate" column="updated_date"/>
-        <association property="user" column="user_id" javaType="com.onion.backend.entity.user.UserSearch">
+        <association property="user" column="user_id" javaType="com.onion.backend.dto.user.UserSearch">
             <result property="username" column="username"/>
             <result property="lastLogin" column="last_login"/>
             <result property="createdDate" column="user_created_date"/>
             <result property="updatedDate" column="user_updated_date"/>
         </association>
-        <association property="board" column="board_id" javaType="com.onion.backend.entity.board.BoardSearch">
+        <association property="board" column="board_id" javaType="com.onion.backend.dto.board.BoardSearch">
             <result property="title" column="board_title"/>
             <result property="description" column="description"/>
             <result property="createdDate" column="board_created_date"/>
             <result property="updatedDate" column="board_updated_date"/>
         </association>
-        <collection property="comments" column="id" ofType="com.onion.backend.entity.comment.CommentSearch" select="findCommentsByArticleId" />
+        <collection property="comments" column="id" ofType="com.onion.backend.dto.comment.CommentSearch" select="findCommentsByArticleId" />
     </resultMap>
 
     <select id="findArticleByIdWithComments" resultMap="ArticleResultMap">
@@ -122,27 +122,27 @@
         ]]>
     </select>
 
-    <resultMap id="CommentResultMap" type="com.onion.backend.entity.comment.CommentSearch" >
+    <resultMap id="CommentResultMap" type="com.onion.backend.dto.comment.CommentSearch" >
         <id property="id" column="id"/>
         <result property="content" column="content"/>
         <result property="commentsId" column="comments_id"/>
         <result property="createdDate" column="created_date"/>
         <result property="updatedDate" column="updated_date"/>
-        <association property="user" column="user_id" javaType="com.onion.backend.entity.user.UserSearch">
+        <association property="user" column="user_id" javaType="com.onion.backend.dto.user.UserSearch">
             <result property="username" column="username"/>
             <result property="lastLogin" column="last_login"/>
             <result property="createdDate" column="user_created_date"/>
             <result property="updatedDate" column="user_updated_date"/>
         </association>
-        <collection property="comments" column="id" ofType="com.onion.backend.entity.comment.CommentSearch" select="findCommentsByCommentId" />
+        <collection property="comments" column="id" ofType="com.onion.backend.dto.comment.CommentSearch" select="findCommentsByCommentId" />
     </resultMap>
 
-    <resultMap id="ChildCommentResultMap" type="com.onion.backend.entity.comment.ChildComment" >
+    <resultMap id="ChildCommentResultMap" type="com.onion.backend.dto.comment.ChildComment" >
         <id property="id" column="id"/>
         <result property="content" column="content"/>
         <result property="createdDate" column="created_date"/>
         <result property="updatedDate" column="updated_date"/>
-        <association property="user" column="user_id" javaType="com.onion.backend.entity.user.UserSearch">
+        <association property="user" column="user_id" javaType="com.onion.backend.dto.user.UserSearch">
             <result property="username" column="username"/>
             <result property="lastLogin" column="last_login"/>
             <result property="createdDate" column="user_created_date"/>

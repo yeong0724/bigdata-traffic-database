@@ -1,8 +1,8 @@
 package com.onion.backend.service;
 
-import com.onion.backend.dto.SignUpUser;
-import com.onion.backend.entity.user.User;
-import com.onion.backend.exception.DatabaseException;
+import com.onion.backend.dto.user.SignUpUser;
+import com.onion.backend.dto.user.User;
+import com.onion.backend.common.exception.DatabaseException;
 import com.onion.backend.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;

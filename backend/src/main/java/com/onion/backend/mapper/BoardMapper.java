@@ -1,6 +1,6 @@
 package com.onion.backend.mapper;
 
-import com.onion.backend.entity.board.Board;
+import com.onion.backend.dto.board.Board;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 

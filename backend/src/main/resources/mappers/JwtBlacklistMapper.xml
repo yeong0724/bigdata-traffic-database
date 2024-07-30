@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.onion.backend.mapper.JwtBlacklistMapper">
-    <select id="findTopByUsernameOrderByExpirationTime" resultType="com.onion.backend.entity.jwt.JwtBlacklist">
+    <select id="findTopByUsernameOrderByExpirationTime" resultType="com.onion.backend.dto.jwt.JwtBlacklist">
         SELECT * FROM jwt_blacklist
         WHERE username = #{username}
         ORDER BY expiration_time

@@ -1,7 +1,7 @@
 package com.onion.backend.mapper;
 
-import com.onion.backend.entity.article.Article;
-import com.onion.backend.entity.article.ArticleSearch;
+import com.onion.backend.dto.article.Article;
+import com.onion.backend.dto.article.ArticleSearch;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
