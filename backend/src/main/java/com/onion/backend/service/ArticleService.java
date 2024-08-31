@@ -1,102 +1,165 @@
 package com.onion.backend.service;
 
-import com.onion.backend.common.CommonUtil;
-import com.onion.backend.dto.EditArticleDto;
-import com.onion.backend.dto.WriteArticleDto;
-import com.onion.backend.entity.Article;
-import com.onion.backend.entity.Board;
-import com.onion.backend.entity.User;
-import com.onion.backend.exception.ForbiddenException;
-import com.onion.backend.exception.RateLimitException;
-import com.onion.backend.exception.ResourceNotFoundException;
-import com.onion.backend.repository.ArticleRepository;
-import com.onion.backend.repository.BoardRepository;
-import com.onion.backend.repository.UserRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.onion.backend.common.utils.CommonUtil;
+import com.onion.backend.dto.article.EditArticleDto;
+import com.onion.backend.dto.article.WriteArticleDto;
+import com.onion.backend.dto.article.Article;
+import com.onion.backend.dto.article.ArticleSearch;
+import com.onion.backend.dto.board.Board;
+import com.onion.backend.dto.user.User;
+import com.onion.backend.common.exception.DatabaseException;
+import com.onion.backend.common.exception.ForbiddenException;
+import com.onion.backend.common.exception.RateLimitException;
+import com.onion.backend.common.exception.ResourceNotFoundException;
+import com.onion.backend.mapper.ArticleMapper;
+import com.onion.backend.mapper.BoardMapper;
+import com.onion.backend.mapper.UserMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.List;
+import java.util.Collections;
 import java.util.Date;
-import java.util.Optional;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 @Service
 public class ArticleService {
-    private final BoardRepository boardRepository;
+    private final BoardMapper boardMapper;
 
-    private final ArticleRepository articleRepository;
+    private final UserMapper userMapper;
 
-    private final UserRepository userRepository;
+    private final ArticleMapper articleMapper;
+
+    private final ElasticSearchService elasticSearchService;
+
+    private final ObjectMapper objectMapper;
 
     @Autowired
-    public ArticleService(BoardRepository boardRepository, ArticleRepository articleRepository, UserRepository userRepository) {
-        this.boardRepository = boardRepository;
-        this.articleRepository = articleRepository;
-        this.userRepository = userRepository;
+    public ArticleService(
+            BoardMapper boardMapper,
+            ArticleMapper articleMapper,
+            UserMapper userMapper,
+            ElasticSearchService elasticSearchService,
+            ObjectMapper objectMapper
+    ) {
+        this.boardMapper = boardMapper;
+        this.userMapper = userMapper;
+        this.articleMapper = articleMapper;
+        this.elasticSearchService = elasticSearchService;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional
-    public Article writeArticle(WriteArticleDto writeArticleDto, Long boardId) {
+    public ArticleSearch getArticleWithComment(Long boardId, Long articleId) throws JsonProcessingException {
+        ArticleSearch articleSearch = articleMapper.findArticleByIdWithComments(boardId, articleId);
+
+        if (articleSearch != null) {
+            Long userId = articleSearch.getUser().getId();
+            Long viewCount = articleSearch.getViewCount() + 1;
+            Article article = Article.builder()
+                    .id(articleId)
+                    .title(articleSearch.getTitle())
+                    .content(articleSearch.getContent())
+                    .userId(userId)
+                    .boardId(boardId)
+                    .isDeleted(false)
+                    .createdDate(articleSearch.getCreatedDate())
+                    .viewCount(viewCount)
+                    .build();
+
+            article.onUpdate();
+
+            // ElasticSearch 게시글 저장
+            this.indexArticle(article);
+
+            int count = articleMapper.updateArticle(article);
+            if (count > 0) {
+                articleSearch.setViewCount(viewCount);
+                return articleSearch;
+            } else {
+                throw new DatabaseException("The view count update failed.");
+            }
+        } else {
+            throw new DatabaseException("The post does not exist.");
+        }
+    }
+
+
+    @Transactional
+    public Article writeArticle(WriteArticleDto writeArticleDto, Long boardId) throws JsonProcessingException {
         if (!this.isCanWriteArticle()) {
             throw new RateLimitException("article not written by rate limit");
         }
 
-        Optional<User> author = userRepository.findByUsername(CommonUtil.getLoginUsername());
-        Optional<Board> board = boardRepository.findById(boardId);
+        User user = userMapper.findByUsername(CommonUtil.getLoginUsername());
+        Board board = boardMapper.findById(boardId);
 
-        if (author.isEmpty()) {
+        if (user == null) {
             throw new ResourceNotFoundException("author not found");
         }
 
-        if (board.isEmpty()) {
+        if (board == null) {
             throw new ResourceNotFoundException("board not found");
         }
 
         Article article = new Article();
-        article.setBoard(board.get()); // Optional
-        article.setAuthor(author.get()); // Optional
+        article.setBoardId(boardId);
+        article.setUserId(user.getId());
         article.setTitle(writeArticleDto.getTitle());
         article.setContent(writeArticleDto.getContent());
+        article.setIsDeleted(false);
+        article.onCreate();
 
-        articleRepository.save(article);
+        int count = articleMapper.createArticle(article);
 
-        return article;
+        // ElasticSearch 게시글 저장
+        this.indexArticle(article);
+
+        if (count == 1) {
+            return article;
+        } else {
+            throw new DatabaseException("Comment create failed");
+        }
     }
 
     public List<Article> firstGetArticle(Long boardId) {
-        return articleRepository.findTop10ByBoardIdOrderByCreatedDateDesc(boardId);
+        return articleMapper.findTop10ByBoardIdOrderByCreatedDateDesc(boardId);
     }
 
     public List<Article> getOldArticle(Long boardId, Long articleId) {
-        return articleRepository.findTop10ByBoardIdAndArticleIdLessThanOrderByCreatedDateDesc(boardId, articleId);
+        return articleMapper.findTop10ByBoardIdAndArticleIdLessThanOrderByCreatedDateDesc(boardId, articleId);
     }
 
     public List<Article> getNewArticle(Long boardId, Long articleId) {
-        return articleRepository.findTop10ByBoardIdAndArticleIdGreaterThanOrderByCreatedDateDesc(boardId, articleId);
+        return articleMapper.findTop10ByBoardIdAndArticleIdGreaterThanOrderByCreatedDateDesc(boardId, articleId);
     }
 
     @Transactional
-    public Article editArticle(Long boardId, Long articleId, EditArticleDto editArticleDto) {
-        Optional<Board> board = boardRepository.findById(boardId);
+    public Article editArticle(Long boardId, Long articleId, EditArticleDto editArticleDto) throws JsonProcessingException {
+        Board board = boardMapper.findById(boardId);
 
-        if (board.isEmpty()) {
+        if (board == null) {
             throw new ResourceNotFoundException("board not found");
         }
 
-        Article article = articleRepository.findById(articleId).orElse(null);
+        Article article = articleMapper.findById(articleId);
 
         if (article == null) {
             throw new ResourceNotFoundException("article not found");
         }
 
-        User author = article.getAuthor();
-        if (!(author.getUsername()).equals(CommonUtil.getLoginUsername())) {
+        User user = userMapper.findById(article.getUserId());
+        String authorName = user.getUsername();
+        String username = CommonUtil.getLoginUsername();
+
+        if (!authorName.equals(username)) {
             throw new ForbiddenException("article author different");
         }
 
@@ -112,42 +175,51 @@ public class ArticleService {
             article.setContent(editArticleDto.getContent());
         }
 
-        articleRepository.save(article);
+        article.onUpdate();
+        int count = articleMapper.updateArticle(article);
 
-        return article;
+        // ElasticSearch 게시글 저장
+        this.indexArticle(article);
+
+        if (count == 1) {
+            return article;
+        } else {
+            throw new DatabaseException("Comment create failed");
+        }
     }
 
     @Transactional
-    public boolean deleteArticle(Long boardId, Long articleId) {
-        User user = userRepository.findByUsername(CommonUtil.getLoginUsername()).orElse(null);
-        Board board = boardRepository.findById(boardId).orElse(null);
-
-        if (user == null) {
-            throw new ResourceNotFoundException("user not found");
-        }
-
+    public boolean deleteArticle(Long boardId, Long articleId) throws JsonProcessingException {
+        Board board = boardMapper.findById(boardId);
         if (board == null) {
             throw new ResourceNotFoundException("board not found");
         }
 
-        Article article = articleRepository.findById(articleId).orElse(null);
+        Article article = articleMapper.findById(articleId);
+
         if (article == null) {
             throw new ResourceNotFoundException("article not found");
         }
 
-        User author = article.getAuthor();
-        if (!author.getUsername().equals(user.getUsername())) {
+        User author = userMapper.findById(article.getUserId());
+        String authorName = author.getUsername();
+        String username = CommonUtil.getLoginUsername();
+
+        if (!authorName.equals(username)) {
             throw new ForbiddenException("article author different");
         }
 
         article.setIsDeleted(true);
-        articleRepository.save(article);
+        articleMapper.deleteArticle(article);
+
+        // ElasticSearch 게시글 저장
+        this.indexArticle(article);
 
         return true;
     }
 
     private boolean isCanWriteArticle() {
-        Article latestArticle = articleRepository.findLatestArticleByAuthorUsernameOrderByCreatedDate(CommonUtil.getLoginUsername());
+        Article latestArticle = articleMapper.findLatestArticleByAuthorUsernameOrderByCreatedDate(CommonUtil.getLoginUsername());
 
         if (latestArticle == null) {
             return true;
@@ -157,7 +229,7 @@ public class ArticleService {
     }
 
     private boolean isCanEditArticle() {
-        Article latestArticle = articleRepository.findLatestArticleByAuthorUsernameOrderByUpdatedDate(CommonUtil.getLoginUsername());
+        Article latestArticle = articleMapper.findLatestArticleByAuthorUsernameOrderByUpdatedDate(CommonUtil.getLoginUsername());
 
         if (latestArticle == null || latestArticle.getUpdatedDate() == null) {
             return true;
@@ -174,5 +246,26 @@ public class ArticleService {
         Duration duration = Duration.between(localDateTime, dateAsLocalDateTime);
 
         return Math.abs(duration.toMinutes()) > 5;
+    }
+
+    public String indexArticle(Article article) throws JsonProcessingException {
+        String articleJson = objectMapper.writeValueAsString(article);
+        return elasticSearchService.indexArticleDocument(article.getId().toString(), articleJson).block();
+    }
+
+    public List<Article> searchArticle(String keyword) {
+        Mono<List<Long>> articleIds = elasticSearchService.articleSearch(keyword);
+
+        try {
+            List<Long> ids = articleIds.toFuture().get();
+            if (!ids.isEmpty()) {
+                return articleMapper.findAllByIds(ids);
+            } else {
+                return Collections.emptyList(); // 빈 리스트 반환
+            }
+
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

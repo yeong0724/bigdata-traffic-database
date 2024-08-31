@@ -1,42 +1,25 @@
 package com.onion.backend.service;
 
-import com.onion.backend.aop.annotation.CheckCommentEditable;
-import com.onion.backend.aop.annotation.CheckCommentWriteable;
-import com.onion.backend.common.CommentContext;
-import com.onion.backend.dto.WriteCommentDto;
-import com.onion.backend.entity.Article;
-import com.onion.backend.entity.Board;
-import com.onion.backend.entity.Comment;
-import com.onion.backend.entity.User;
-import com.onion.backend.exception.ForbiddenException;
-import com.onion.backend.exception.ResourceNotFoundException;
-import com.onion.backend.repository.ArticleRepository;
-import com.onion.backend.repository.BoardRepository;
-import com.onion.backend.repository.CommentRepository;
+import com.onion.backend.common.aop.annotation.CheckCommentEditable;
+import com.onion.backend.common.aop.annotation.CheckCommentWriteable;
+import com.onion.backend.common.utils.CommentContext;
+import com.onion.backend.dto.comment.WriteCommentDto;
+import com.onion.backend.dto.article.Article;
+import com.onion.backend.dto.comment.Comment;
+import com.onion.backend.dto.user.User;
+import com.onion.backend.common.exception.DatabaseException;
+import com.onion.backend.mapper.CommentMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 @Service
 public class CommentService {
-    private final BoardRepository boardRepository;
-
-    private final ArticleRepository articleRepository;
-
-    private final CommentRepository commentRepository;
+    private final CommentMapper commentMapper;
 
     @Autowired
-    public CommentService(BoardRepository boardRepository, ArticleRepository articleRepository, CommentRepository commentRepository) {
-        this.boardRepository = boardRepository;
-        this.articleRepository = articleRepository;
-        this.commentRepository = commentRepository;
+    public CommentService(CommentMapper commentMapper) {
+        this.commentMapper = commentMapper;
     }
 
     @Transactional
@@ -47,82 +30,53 @@ public class CommentService {
         Article article = CommentContext.getCurrentArticle();
 
         Comment comment = new Comment();
-        comment.setArticle(article);
-        comment.setAuthor(user);
+        comment.setArticleId(article.getId()); // 게시글 정보
+        comment.setUserId(user.getId()); // 작성자 정보
         comment.setContent(writeCommentDto.getContent());
+        comment.setIsDeleted(false);
+        comment.onCreate();
 
-        commentRepository.save(comment);
+        Long commentsId = writeCommentDto.getCommentsId();
+        if (commentsId != null) {
+            comment.setCommentsId(commentsId);
+        }
 
-        return comment;
+        int count = commentMapper.createComment(comment);
+
+        if (count == 1) {
+            return comment;
+        } else {
+            throw new DatabaseException("Comment create failed.");
+        }
     }
 
     @Transactional
     @CheckCommentEditable
     @SuppressWarnings("unused")
     public Comment editComment(Long boardId, Long articleId, Long commentId, WriteCommentDto writeCommentDto) {
-        // User user = CommentContext.getCurrentUser();
-        //
-        // if (!Objects.equals(comment.getAuthor().getUsername(), user.getUsername())) {
-        //     throw new ForbiddenException("comment author different");
-        // }
-
         Comment comment = CommentContext.getCurrentComment();
+        comment.onUpdate();
         if (writeCommentDto.getContent() != null) {
             comment.setContent(writeCommentDto.getContent());
         }
 
-        commentRepository.save(comment);
-        return comment;
+        int count = commentMapper.updateComment(comment);
+        if (count == 1) {
+            return comment;
+        } else {
+            throw new DatabaseException("Comment update failed.");
+        }
     }
 
     @Transactional
     @CheckCommentEditable
     @SuppressWarnings("unused")
     public void deleteComment(Long boardId, Long articleId, Long commentId) {
-        // User user = CommentContext.getCurrentUser();
-        //
-        // if (!Objects.equals(comment.getAuthor().getUsername(), user.getUsername())) {
-        //     throw new ForbiddenException("comment author different");
-        // }
-
         Comment comment = CommentContext.getCurrentComment();
         comment.setIsDeleted(true);
-        commentRepository.save(comment);
-    }
-
-    @Async
-    protected CompletableFuture<Article> getArticle(Long boardId, Long articleId) {
-        Optional<Board> board = boardRepository.findById(boardId);
-        if (board.isEmpty()) {
-            throw new ResourceNotFoundException("board not found");
+        int count = commentMapper.deleteComment(comment);
+        if (count < 1) {
+            throw new DatabaseException("Comment deleted failed.");
         }
-        Optional<Article> article = articleRepository.findById(articleId);
-        if (article.isEmpty() || article.get().getIsDeleted()) {
-            throw new ResourceNotFoundException("article not found");
-        }
-        return CompletableFuture.completedFuture(article.get());
-    }
-
-    @Async
-    protected CompletableFuture<List<Comment>> getComments(Long articleId) {
-        return CompletableFuture.completedFuture(commentRepository.findByArticleId(articleId));
-    }
-
-    public CompletableFuture<Article> getArticleWithComment(Long boardId, Long articleId) {
-        CompletableFuture<Article> articleFuture = this.getArticle(boardId, articleId);
-        CompletableFuture<List<Comment>> commentsFuture = this.getComments(articleId);
-
-        return CompletableFuture.allOf(articleFuture, commentsFuture)
-                .thenApply(voidResult -> {
-                    try {
-                        Article article = articleFuture.get();
-                        List<Comment> comments = commentsFuture.get();
-                        article.setComments(comments);
-                        return article;
-                    } catch (InterruptedException | ExecutionException e) {
-                        e.printStackTrace();
-                        return null;
-                    }
-                });
     }
 }
