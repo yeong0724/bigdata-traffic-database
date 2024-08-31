@@ -33,4 +33,6 @@ public class ArticleSearch {
     private BoardSearch board;
 
     private List<CommentSearch> comments = new ArrayList<>();
+
+    private Long viewCount;
 }

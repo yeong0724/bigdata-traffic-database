@@ -9,6 +9,8 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 public class BoardSearch {
+    private Long id;
+
     private String title;
 
     private String description;

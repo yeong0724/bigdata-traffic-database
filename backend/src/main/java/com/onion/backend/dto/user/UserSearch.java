@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 public class UserSearch {
+    private Long id;
+
     private String username;
 
     private LocalDateTime lastLogin;

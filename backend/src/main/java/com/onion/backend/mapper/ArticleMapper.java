@@ -17,6 +17,8 @@ public interface ArticleMapper {
 
     int deleteArticle(Article article);
 
+    List<Article> findAllByIds(List<Long> ids);
+
     List<Article> findTop10ByBoardIdOrderByCreatedDateDesc(@Param("boardId") Long boardId);
 
     List<Article> findTop10ByBoardIdAndArticleIdLessThanOrderByCreatedDateDesc(

@@ -127,6 +127,9 @@ GET /article/_search
 
 GET /article_new/_search
 
+# index id별로 데이터 조회
+GET /article/_doc/8
+
 # index id별로 삭제 요청
 DELETE /article/_doc/3
 
@@ -144,7 +147,5 @@ GET /article/_analyze
   "analyzer": "nori_analyzer",
   "text": "개"
 }
-
-
 ```
 

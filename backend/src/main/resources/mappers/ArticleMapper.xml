@@ -82,13 +82,16 @@
         <result property="isDeleted" column="is_deleted"/>
         <result property="createdDate" column="created_date"/>
         <result property="updatedDate" column="updated_date"/>
+        <result property="viewCount" column="view_count"/>
         <association property="user" column="user_id" javaType="com.onion.backend.dto.user.UserSearch">
+            <result property="id" column="user_id"/>
             <result property="username" column="username"/>
             <result property="lastLogin" column="last_login"/>
             <result property="createdDate" column="user_created_date"/>
             <result property="updatedDate" column="user_updated_date"/>
         </association>
         <association property="board" column="board_id" javaType="com.onion.backend.dto.board.BoardSearch">
+            <result property="id" column="board_id"/>
             <result property="title" column="board_title"/>
             <result property="description" column="description"/>
             <result property="createdDate" column="board_created_date"/>
@@ -96,31 +99,6 @@
         </association>
         <collection property="comments" column="id" ofType="com.onion.backend.dto.comment.CommentSearch" select="findCommentsByArticleId" />
     </resultMap>
-
-    <select id="findArticleByIdWithComments" resultMap="ArticleResultMap">
-        <![CDATA[
-        SELECT a.id           AS id,
-               a.title        AS title,
-               a.content      AS content,
-               a.is_deleted   AS is_deleted,
-               a.created_date AS created_date,
-               a.updated_date AS updated_date,
-               u.username     AS username,
-               u.last_login   AS last_login,
-               u.created_date AS user_created_date,
-               u.updated_date AS user_updated_date,
-               b.title        AS board_title,
-               b.description  AS description,
-               b.created_date AS board_created_date,
-               b.updated_date AS board_updated_date
-        FROM article a
-                 JOIN user u ON a.user_id = u.id
-                 JOIN board b ON a.board_id = b.id
-        WHERE a.board_id = #{boardId}
-          AND a.id = #{articleId}
-          AND a.is_deleted = false
-        ]]>
-    </select>
 
     <resultMap id="CommentResultMap" type="com.onion.backend.dto.comment.CommentSearch" >
         <id property="id" column="id"/>
@@ -149,6 +127,34 @@
             <result property="updatedDate" column="user_updated_date"/>
         </association>
     </resultMap>
+
+    <select id="findArticleByIdWithComments" resultMap="ArticleResultMap">
+        <![CDATA[
+        SELECT a.id           AS id,
+               a.title        AS title,
+               a.content      AS content,
+               a.is_deleted   AS is_deleted,
+               a.created_date AS created_date,
+               a.updated_date AS updated_date,
+               a.view_count   AS view_count,
+               u.id           AS user_id,
+               u.username     AS username,
+               u.last_login   AS last_login,
+               u.created_date AS user_created_date,
+               u.updated_date AS user_updated_date,
+               b.id           AS board_id,
+               b.title        AS board_title,
+               b.description  AS description,
+               b.created_date AS board_created_date,
+               b.updated_date AS board_updated_date
+        FROM article a
+                 JOIN user u ON a.user_id = u.id
+                 JOIN board b ON a.board_id = b.id
+        WHERE a.board_id = #{boardId}
+          AND a.id = #{articleId}
+          AND a.is_deleted = false
+        ]]>
+    </select>
 
     <select id="findCommentsByArticleId" resultMap="CommentResultMap">
         SELECT c.id           AS id,
@@ -181,16 +187,45 @@
           AND is_deleted = false
     </select>
 
+    <select id="findAllByIds" resultMap="ArticleResultMap">
+        SELECT a.id           AS id,
+               a.title        AS title,
+               a.content      AS content,
+               a.is_deleted   AS is_deleted,
+               a.created_date AS created_date,
+               a.updated_date AS updated_date,
+               a.view_count   AS view_count,
+               u.id           AS user_id,
+               u.username     AS username,
+               u.last_login   AS last_login,
+               u.created_date AS user_created_date,
+               u.updated_date AS user_updated_date,
+               b.id           AS board_id,
+               b.title        AS board_title,
+               b.description  AS description,
+               b.created_date AS board_created_date,
+               b.updated_date AS board_updated_date
+        FROM article a
+                 JOIN user u ON a.user_id = u.id
+                 JOIN board b ON a.board_id = b.id
+        WHERE a.id IN
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+         AND a.is_deleted = false
+    </select>
+
     <insert id="createArticle" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO article (content, created_date, title, updated_date, user_id, board_id, is_deleted)
-        VALUES (#{content}, #{createdDate}, #{title}, #{updatedDate}, #{userId}, #{boardId}, #{isDeleted})
+        INSERT INTO article (content, created_date, title, updated_date, user_id, board_id, is_deleted, view_count)
+        VALUES (#{content}, #{createdDate}, #{title}, #{updatedDate}, #{userId}, #{boardId}, #{isDeleted}, #{viewCount})
     </insert>
 
     <update id="updateArticle">
         UPDATE article
         SET content      = #{content},
             title        = #{title},
-            updated_date = #{updatedDate}
+            updated_date = #{updatedDate},
+            view_count   = #{viewCount}
         WHERE id = #{id}
     </update>
 
