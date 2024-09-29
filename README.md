@@ -2,6 +2,14 @@
 대용량 트래픽 처리를 위한 데이터베이스 구축 프로젝트
 - SpringBoot + Mybatis + jwt
 
+# Project Wokr Flow
+
+### 1. 광고 클릭 Flow
+![img.png](img.png)
+
+### 2. 통계 집계 배치 Flow
+![img_1.png](img_1.png)
+
 ## Elastic Search - Kibana 쿼리문
 ```
 # 인덱스 설정
