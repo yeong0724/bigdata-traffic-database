@@ -155,5 +155,8 @@ GET /article/_analyze
   "analyzer": "nori_analyzer",
   "text": "개"
 }
+
+# 광고 조회수 집계 인덱스 조회
+GET /ad_view_stat/_search
 ```
 
