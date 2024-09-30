@@ -160,3 +160,62 @@ GET /article/_analyze
 GET /ad_view_stat/_search
 ```
 
+### MySQL 쿼리문
+```mysql
+GRANT ALL PRIVILEGES ON bigdata.* TO 'myuser'@'%';
+FLUSH PRIVILEGES;
+
+CREATE TABLE user
+(
+    id           BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username     VARCHAR(20)  NOT NULL,
+    password     VARCHAR(100) NOT NULL,
+    email        VARCHAR(50)  NOT NULL,
+    last_login   DATETIME,
+    created_date DATETIME     NOT NULL,
+    updated_date DATETIME
+);
+
+CREATE TABLE jwt_blacklist
+(
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    token           VARCHAR(255) NOT NULL,
+    expiration_time DATETIME     NOT NULL,
+    username        VARCHAR(20)  NOT NULL
+);
+
+CREATE TABLE article
+(
+    id           BIGINT AUTO_INCREMENT PRIMARY KEY,
+    title        VARCHAR(255) NOT NULL,
+    content      MEDIUMTEXT   NOT NULL,
+    user_id      BIGINT       NOT NULL,
+    board_id     BIGINT       NOT NULL,
+    is_deleted   BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_date DATETIME     NOT NULL,
+    updated_date DATETIME,
+    view_count   BIGINT       NOT NULL DEFAULT 0,
+    INDEX idx_user_id (user_id),
+    INDEX idx_board_id (board_id)
+);
+
+CREATE TABLE board
+(
+    id           BIGINT AUTO_INCREMENT PRIMARY KEY,
+    title        VARCHAR(255) NOT NULL,
+    description  TEXT         NOT NULL,
+    created_date DATETIME     NOT NULL,
+    updated_date DATETIME
+);
+
+CREATE TABLE comment
+(
+    id           BIGINT AUTO_INCREMENT PRIMARY KEY,
+    content      MEDIUMTEXT NOT NULL,
+    author_id    BIGINT,
+    article_id   BIGINT,
+    is_deleted   BOOLEAN    NOT NULL DEFAULT FALSE,
+    created_date DATETIME   NOT NULL,
+    updated_date DATETIME
+);
+```
